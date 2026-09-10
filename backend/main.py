@@ -1,14 +1,17 @@
+import os
+import re
+from datetime import datetime
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
+
 from neo4j import GraphDatabase
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
-from pydantic import BaseModel
-from datetime import datetime
-import os
 
 app = FastAPI(title="Crypto Tracing API")
 
@@ -21,17 +24,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- ROOT HEALTH CHECK ENDPOINT ---
-@app.get("/")
-def read_root():
-    return {"status": "online", "message": "Crypto Tracing API is running successfully"}
+# --- SECURE DIRECTORY SETUP FOR PDF REPORTS ---
+REPORTS_DIR = "generated_reports"
+os.makedirs(REPORTS_DIR, exist_ok=True)
 
+# --- SECURE CREDENTIALS ---
+# Uses Environment Variables so your password is never exposed on GitHub
 NEO4J_URI = os.getenv("NEO4J_URI", "neo4j+s://b527d094.databases.neo4j.io")
-NEO4J_USER = os.getenv("NEO4J_USER", "b527d094")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "RX0J_wtmCZQpKtllMVkh4Cast5Z8xZlIHbVtzpg7q6g")
+NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "LOCAL_TESTING_PASSWORD")
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
+# In-memory database for demo portal submissions
 FILED_REPORTS = []
 
 class PortalSubmission(BaseModel):
@@ -39,6 +44,11 @@ class PortalSubmission(BaseModel):
     risk_score: int
     vasp_name: str
     download_url: str
+
+# --- ROOT HEALTH CHECK ENDPOINT ---
+@app.get("/")
+def read_root():
+    return {"status": "online", "message": "Crypto Tracing API is running successfully"}
 
 @app.get("/api/v1/wallet/{address}")
 def get_wallet(address: str):
@@ -153,7 +163,11 @@ def generate_sar_report(
     risk_score: int = Query(85)
 ):
     pdf_filename = f"SAR_Report_{wallet_address}.pdf"
-    doc = SimpleDocTemplate(pdf_filename, pagesize=letter)
+    
+    # Securely point to the generated_reports directory
+    filepath = os.path.join(REPORTS_DIR, pdf_filename)
+    
+    doc = SimpleDocTemplate(filepath, pagesize=letter)
     story = []
     styles = getSampleStyleSheet()
 
@@ -199,8 +213,14 @@ def generate_sar_report(
 
 @app.get("/api/v1/download-sar/{filename}")
 def download_sar(filename: str):
-    if os.path.exists(filename):
-        return FileResponse(filename, media_type='application/pdf', filename=filename)
+    # SECURITY FIX: Ensure the file is actually a SAR report and block malicious path traversal like "../"
+    if not re.match(r"^SAR_Report_[a-zA-Z0-9_]+\.pdf$", filename):
+        raise HTTPException(status_code=400, detail="Invalid filename format")
+
+    filepath = os.path.join(REPORTS_DIR, filename)
+    
+    if os.path.exists(filepath):
+        return FileResponse(filepath, media_type='application/pdf', filename=filename)
     raise HTTPException(status_code=404, detail="Report not found")
 
 @app.post("/api/v1/sahyog/submit-report")

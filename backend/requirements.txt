@@ -3,4 +3,3 @@ uvicorn
 neo4j
 reportlab
 pydantic
-requests
