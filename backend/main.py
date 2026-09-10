@@ -26,7 +26,6 @@ app.add_middleware(
 def read_root():
     return {"status": "online", "message": "Crypto Tracing API is running successfully"}
 
-# Cloud-ready Neo4j configuration
 NEO4J_URI = os.getenv("NEO4J_URI", "neo4j+s://b527d094.databases.neo4j.io")
 NEO4J_USER = os.getenv("NEO4J_USER", "b527d094")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "RX0J_wtmCZQpKtllMVkh4Cast5Z8xZlIHbVtzpg7q6g")
