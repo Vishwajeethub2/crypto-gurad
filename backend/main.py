@@ -20,9 +20,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-NEO4J_URI = "bolt://localhost:7687"
-NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "admin123"
+# Cloud-ready Neo4j configuration using your Aura credentials as the safe fallback
+NEO4J_URI = os.getenv("NEO4J_URI", "neo4j+s://b527d094.databases.neo4j.io")
+NEO4J_USER = os.getenv("NEO4J_USER", "b527d094")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "RX0J_wtmCZQpKtllMVkh4Cast5Z8xZlIHbVtzpg7q6g")
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
@@ -167,7 +168,6 @@ def generate_sar_report(
     story.append(Paragraph("<b>Status:</b> High-Risk Suspicious Activity Identified", styles['Normal']))
     story.append(Spacer(1, 15))
 
-    # Dynamic Forensic Table displaying actual VASP and risk details
     data = [
         ['Indicator', 'Forensic Value'],
         ['Target Wallet Address', wallet_address],
