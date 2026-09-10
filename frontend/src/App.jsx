@@ -4,7 +4,9 @@ import '@xyflow/react/dist/style.css';
 import axios from 'axios';
 import Portal from './Portal';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:8000' 
+  : 'https://crypto-gurad.onrender.com';
 
 export default function App() {
   const [nodes, setNodes] = useState([]);
