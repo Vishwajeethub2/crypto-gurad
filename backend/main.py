@@ -12,7 +12,7 @@ import os
 
 app = FastAPI(title="Crypto Tracing API")
 
-# --- CORS CONFIGURATION (Fixes Vercel-Render Connection) ---
+# --- CORS CONFIGURATION ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,19 +21,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- ROOT HEALTH CHECK ENDPOINT (Fixes 404 on base URL) ---
+# --- ROOT HEALTH CHECK ENDPOINT ---
 @app.get("/")
 def read_root():
     return {"status": "online", "message": "Crypto Tracing API is running successfully"}
 
-# Cloud-ready Neo4j configuration using your Aura credentials as the safe fallback
+# Cloud-ready Neo4j configuration
 NEO4J_URI = os.getenv("NEO4J_URI", "neo4j+s://b527d094.databases.neo4j.io")
 NEO4J_USER = os.getenv("NEO4J_USER", "b527d094")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "RX0J_wtmCZQpKtllMVkh4Cast5Z8xZlIHbVtzpg7q6g")
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-# --- SAHYOG PORTAL IN-MEMORY DATABASE ---
 FILED_REPORTS = []
 
 class PortalSubmission(BaseModel):
